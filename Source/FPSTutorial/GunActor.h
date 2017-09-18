@@ -33,13 +33,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class USoundBase* FireSound;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float WeaponCooldownTimer = 1.0f;
+	UPROPERTY()
+	class UAnimInstance* FirstPersonAnimInstance = nullptr;
+	UPROPERTY()
+	class UAnimInstance* ThirdPersonAnimInstance = nullptr;
+
 	/** AnimMontage to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* FireAnimation;
+	class UAnimMontage* FireAnimationThirdPerson;
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	UAnimInstance* AnimInstance;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	class UAnimMontage* FireAnimationFirstPerson;
 
 	// Sets default values for this actor's properties
 	AGunActor();
@@ -53,7 +59,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void FireWeapon();
+	bool FireWeapon();
 
-	
+private:
+	bool CanFireWeapon();
+	float CurrentCooldown;
 };

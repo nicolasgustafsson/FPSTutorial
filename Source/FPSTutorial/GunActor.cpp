@@ -21,6 +21,8 @@ AGunActor::AGunActor()
 	FP_MuzzleLocation->SetupAttachment(FP_Gun);
 	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
 
+
+	CurrentCooldown = 0.0f;
 }
 
 // Called when the game starts or when spawned
@@ -34,45 +36,64 @@ void AGunActor::BeginPlay()
 void AGunActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	CurrentCooldown -= DeltaTime;
 }
 
 
-void AGunActor::FireWeapon()
+bool AGunActor::FireWeapon()
 {
 	// try and fire a projectile
 	if (ProjectileClass != NULL)
 	{
 		UWorld* const World = GetWorld();
-		if (World != NULL)
+		if (World != nullptr)
 		{
+			if (CanFireWeapon() == true)
+			{
+				const FRotator ShootDirection = FP_MuzzleLocation->GetComponentRotation();
+				// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+				const FVector SpawnLocation = FP_MuzzleLocation->GetComponentLocation();
 
-			const FRotator ShootDirection = FP_MuzzleLocation->GetComponentRotation();
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = FP_MuzzleLocation->GetComponentLocation();
+				//Set Spawn Collision Handling Override
+				FActorSpawnParameters ActorSpawnParams;
+				ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+				// spawn the projectile at the muzzle
+				World->SpawnActor<APeaProjectile>(ProjectileClass, SpawnLocation, ShootDirection, ActorSpawnParams);
 
-			// spawn the projectile at the muzzle
-			World->SpawnActor<APeaProjectile>(ProjectileClass, SpawnLocation, ShootDirection, ActorSpawnParams);
+				if (FireSound != nullptr)
+				{
+					UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+				}
+
+
+				UE_LOG(LogTemp, Warning, TEXT("Firing Weapons!"));
+				CurrentCooldown = WeaponCooldownTimer;
+
+				if (FirstPersonAnimInstance != nullptr && FireAnimationFirstPerson != nullptr)
+				{
+					FirstPersonAnimInstance->Montage_Play(FireAnimationFirstPerson, 1.f);
+
+				}
+				if (ThirdPersonAnimInstance != nullptr && FireAnimationThirdPerson != nullptr)
+				{
+					ThirdPersonAnimInstance->Montage_Play(FireAnimationThirdPerson, 1.f);
+				}
+
+				return true;
+			}
 		}
 	}
 
-	// try and play the sound if specified
-	if (FireSound != NULL)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	}
-	//
+	return false;
+
 	//// try and play a firing animation if specified
-	//if (FireAnimation != NULL)
-	//{
-	//	//Get the animation object for the arms mesh
-	//	if (AnimInstance != NULL)
-	//	{
-	//		AnimInstance->Montage_Play(FireAnimation, 1.f);
-	//	}
-	//}
+
+}
+
+
+bool AGunActor::CanFireWeapon()
+{
+	return CurrentCooldown <= 0.0f;
 }
 

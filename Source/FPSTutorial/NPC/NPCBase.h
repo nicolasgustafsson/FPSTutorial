@@ -28,4 +28,19 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void UnPossessed() override;
+
+	UPROPERTY(EditAnywhere)
+	class UCameraComponent* FirstPersonCamera = nullptr;
+	UPROPERTY(EditAnywhere)
+	class USkeletalMeshComponent* SkeletalMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = Weapon)
+	TSubclassOf<class AGunActor> GunClass;
+
+	class AGunActor* Gun = nullptr;
+
+	UFUNCTION(BlueprintCallable)
+	void FireWeapon();
 };
